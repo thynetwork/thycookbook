@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
+/* CSS Variables matching legacy design */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand: #0fb36a;         /* fresh herb green */
+  --accent: #ff8a00;        /* mango orange */
+  --accent-2: #e91e63;      /* beet pink */
+  --accent-3: #3f51b5;      /* blue plate */
+  --ink: #121212;
+  --muted: #5a5a5a;
+  --bg: #fffdf8;            /* warm, food-friendly white */
+  --card: #ffffff;
+  --ring: rgba(15,179,106,.25);
+  --radius: 14px;
+  --shadow: 0 10px 30px rgba(0,0,0,.07);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  padding: 0;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.55;
+}
+
+.container-custom {
+  width: min(1200px, 92vw);
+  margin-inline: auto;
+}
+
+/* Accessibility utility */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
