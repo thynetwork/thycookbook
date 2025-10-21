@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ThyCookbook.com — A Celebration of World Cuisine</title>
+  <meta name="description" content="ThyCookbook brings the world’s cuisines together with lively sections and influencer videos." />
+  <link href="styles.css" rel="stylesheet" />
+</head>
+<body id="top">
+  <!-- ================= HEADER / NAV ================= -->
+  <header class="site-header">
+    <nav class="nav container" aria-label="Primary">
+      <div class="nav-left">
+        <a class="brand" href="/">ThyCookbook<span class="dot">.com</span></a>
+      </div>
+      <button id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="navMenu" aria-label="Toggle menu">☰</button>
+      <div id="navMenu" class="nav-right">
+        <ul class="nav-list">
+          <li><a href="#top">Home</a></li>
+          <li><a href="#breakfast">Breakfast</a></li>
+          <li><a href="#brunch">Brunch</a></li>
+          <li><a href="#lunch">Lunch</a></li>
+          <li><a href="#dinner">Dinner</a></li>
+          <li><a href="#quick-meals">Quick Meals</a></li>
+          <li><a href="#appetizers">Appetizers</a></li>
+      
+          <li><a class="btn nav-btn" href="#log">Log In/SignUp</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ================= HERO (unchanged) ================= -->
+  <section class="hero container">
+    <div class="hero-content">
+      <h1>A Celebration of World Cuisine</h1>
+      <p>Welcome to <strong>ThyCookbook</strong> — where the world comes together one plate at a time. Explore recipes, stories, and videos from food creators across the globe.</p>
+      <div class="hero-cta">
+        <a class="btn primary" href="#breakfast">Explore Sections</a>
+        <a class="btn ghost" href="#about">What is ThyCookbook?</a>
+      </div>
+    </div>
+    <div class="hero-mosaic" aria-hidden="true">
+      <div></div><div></div><div></div><div></div>
+      <div></div><div></div><div></div><div></div>
+    </div>
+  </section>
+
+  <!-- ================= ABOUT (with ad on left under text) ================= -->
+  <section id="about" class="section section--about container">
+    <div class="section-head">
+      <h2>About ThyCookbook</h2>
+    </div>
+
+    <div class="section-body">
+      <div class="text">
+        <p>Part of the <strong>ThyNetwork</strong> ecosystem, ThyCookbook curates vibrant dishes, techniques, and food culture. We spotlight creators from every region — from street food legends to home-kitchen innovators.</p>
+        <ul class="bullets">
+          <li>Global voices &amp; authentic recipes</li>
+          <li>Medium video boxes for quick, visual learning</li>
+          <li>Colorful, lively browsing experience</li>
+        </ul>
+
+        <!-- AD SLOT #1: About section -->
+        <div class="ad-slot ad-slot--about" aria-label="Sponsored">
+          <div class="ad-inner">Ad Space — 300×250 / 336×280</div>
+        </div>
+      </div>
+
+      <div class="influencer-box">
+        <article class="video-card" data-video="https://www.youtube.com/embed/dQw4w9WgXcQ">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=About+Video" alt="About ThyCookbook video thumbnail">
+            <button class="play-btn" aria-label="Play video">▶</button>
+          </div>
+          <div class="video-meta">
+            <h3>Welcome to ThyCookbook</h3>
+            <p>Meet the creators and the mission behind the flavors.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION TEMPLATE: title → videos (2 side-by-side) → paragraph + link ================= -->
+
+  <!-- 1. BREAKFAST -->
+  <section id="breakfast" class="section container">
+    <div class="section-head">
+      <h2>World Breakfasts</h2>
+    </div>
+
+    <div class="section-body stack">
+      <div class="video-grid two-col">
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_1">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Fluffy+Pancakes" alt="Fluffy Pancakes video">
+            <button class="play-btn" aria-label="Play Fluffy Pancakes">▶</button>
+          </div>
+          <div class="video-meta"><h3>Fluffy Pancakes</h3><p>@ChefGlobal</p></div>
+        </article>
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_2">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Tamago+Sando" alt="Tamago Sando video">
+            <button class="play-btn" aria-label="Play Tamago Sando">▶</button>
+          </div>
+          <div class="video-meta"><h3>Tamago Sando</h3><p>@TokyoKitchen</p></div>
+        </article>
+      </div>
+
+      <div class="section-footer">
+        <p>From Japanese tamago to French croissants and Nigerian akara — discover how the world starts the day.</p>
+        <a class="link-arrow" href="#breakfast">See more breakfast ideas →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. BRUNCH -->
+  <section id="brunch" class="section container">
+    <div class="section-head">
+      <h2>Brunch Cultures</h2>
+    </div>
+
+    <div class="section-body stack">
+      <div class="video-grid two-col">
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_3">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Shakshuka" alt="Shakshuka video">
+            <button class="play-btn" aria-label="Play Shakshuka">▶</button>
+          </div>
+          <div class="video-meta"><h3>Shakshuka</h3><p>@SpiceTrail</p></div>
+        </article>
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_4">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Dim+Sum+at+Home" alt="Dim Sum video">
+            <button class="play-btn" aria-label="Play Dim Sum">▶</button>
+          </div>
+          <div class="video-meta"><h3>Dim Sum At Home</h3><p>@CantoneseCravings</p></div>
+        </article>
+      </div>
+
+      <div class="section-footer">
+        <p>Weekend flavors that bring people together — shakshuka, dim sum, chilaquiles, and more.</p>
+        <a class="link-arrow" href="#brunch">See more brunch ideas →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- AD SLOT #2: Between Brunch and Lunch -->
+  <section class="ad-wrap container" aria-label="Sponsored">
+    <div class="ad-slot ad-slot--inline">
+      <div class="ad-inner">Ad Space — 728×90 / 970×90</div>
+    </div>
+  </section>
+
+  <!-- 3. LUNCH -->
+  <section id="lunch" class="section container">
+    <div class="section-head">
+      <h2>Lunch Around the Globe</h2>
+    </div>
+
+    <div class="section-body stack">
+      <div class="video-grid two-col">
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_5">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Egyptian+Koshari" alt="Koshari video">
+            <button class="play-btn" aria-label="Play Koshari">▶</button>
+          </div>
+          <div class="video-meta"><h3>Egyptian Koshari</h3><p>@CairoKitchen</p></div>
+        </article>
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_6">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Bento+3+Ways" alt="Bento video">
+            <button class="play-btn" aria-label="Play Bento 3 Ways">▶</button>
+          </div>
+          <div class="video-meta"><h3>Bento 3 Ways</h3><p>@NoriNotes</p></div>
+        </article>
+      </div>
+
+      <div class="section-footer">
+        <p>Quick bento, hearty koshari, fresh salads, and street-side classics to power your day.</p>
+        <a class="link-arrow" href="#lunch">See more lunch ideas →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. DINNER -->
+  <section id="dinner" class="section container">
+    <div class="section-head">
+      <h2>Dinner Traditions</h2>
+    </div>
+
+    <div class="section-body stack">
+      <div class="video-grid two-col">
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_7">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Lamb+Tagine" alt="Tagine video">
+            <button class="play-btn" aria-label="Play Lamb Tagine">▶</button>
+          </div>
+          <div class="video-meta"><h3>Lamb Tagine</h3><p>@CasablancaPlates</p></div>
+        </article>
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_8">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Chicken+Biryani" alt="Biryani video">
+            <button class="play-btn" aria-label="Play Chicken Biryani">▶</button>
+          </div>
+          <div class="video-meta"><h3>Chicken Biryani</h3><p>@HyderabadiHearts</p></div>
+        </article>
+      </div>
+
+      <div class="section-footer">
+        <p>The heart of family &amp; cultural gatherings — biryani, feijoada, tagine, pozole, and more.</p>
+        <a class="link-arrow" href="#dinner">See more dinner ideas →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. QUICK MEALS -->
+  <section id="quick-meals" class="section container">
+    <div class="section-head">
+      <h2>Quick Meals</h2>
+    </div>
+
+    <div class="section-body stack">
+      <div class="video-grid two-col">
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_11">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Garlic+Butter+Shrimp" alt="Shrimp video">
+            <button class="play-btn" aria-label="Play Garlic Butter Shrimp">▶</button>
+          </div>
+          <div class="video-meta"><h3>Garlic Butter Shrimp</h3><p>@PanToPlate</p></div>
+        </article>
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_12">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Veggie+Stir+Fry" alt="Stir-fry video">
+            <button class="play-btn" aria-label="Play Veggie Stir-Fry">▶</button>
+          </div>
+          <div class="video-meta"><h3>Veggie Stir-Fry</h3><p>@WokThisWay</p></div>
+        </article>
+      </div>
+
+      <div class="section-footer">
+        <p>15–20 minute meals without sacrificing flavor — perfect for busy nights.</p>
+        <a class="link-arrow" href="#quick-meals">See more quick meals →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. APPETIZERS -->
+  <section id="appetizers" class="section container">
+    <div class="section-head">
+      <h2>Appetizers &amp; Starters</h2>
+    </div>
+
+    <div class="section-body stack">
+      <div class="video-grid two-col">
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_13">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Spanish+Tapas" alt="Tapas video">
+            <button class="play-btn" aria-label="Play Spanish Tapas">▶</button>
+          </div>
+          <div class="video-meta"><h3>Spanish Tapas</h3><p>@SevilleBites</p></div>
+        </article>
+        <article class="video-card" data-video="https://www.youtube.com/embed/VIDEO_ID_14">
+          <div class="video-thumb">
+            <img src="https://placehold.co/640x360?text=Dumpling+Trio" alt="Dumplings video">
+            <button class="play-btn" aria-label="Play Dumpling Trio">▶</button>
+          </div>
+          <div class="video-meta"><h3>Dumpling Trio</h3><p>@FoldAndSteam</p></div>
+        </article>
+      </div>
+
+      <div class="section-footer">
+        <p>Small plates with big flavor — tapas, bruschetta, dumplings, mezze, ceviche.</p>
+        <a class="link-arrow" href="#appetizers">See more appetizers →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER (with ad) ================= -->
+  <footer class="site-footer">
+    <!-- AD SLOT #3: Footer -->
+    <div class="container ad-slot ad-slot--footer" aria-label="Sponsored">
+      <div class="ad-inner">Ad Space — 970×250 / 728×90</div>
+    </div>
+
+    <div class="container footer-grid">
+      <div class="foot-brand">
+        <a class="brand" href="/">ThyCookbook<span class="dot">.com</span></a>
+        <p class="tagline">One World, Many Flavors.</p>
+      </div>
+      <div class="foot-links">
+        <a href="#top">Home</a>
+        <a href="thycook.html">ThyCook.com</a>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="foot-social">
+        <a href="#" aria-label="YouTube">YouTube</a>
+        <a href="#" aria-label="Instagram">Instagram</a>
+        <a href="#" aria-label="X">X</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Simple Log anchor target -->
+  <div id="log" class="visually-hidden" aria-hidden="true"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
