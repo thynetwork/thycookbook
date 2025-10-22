@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session } = useSession();
 
   const navLinks = [
     { href: '#top', label: 'Home' },
@@ -15,6 +17,10 @@ export default function Header() {
     { href: '#quick-meals', label: 'Quick Meals' },
     { href: '#appetizers', label: 'Appetizers' },
   ];
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-[6px] backdrop-saturate-[1.4] bg-bg/85 border-b border-black/[0.06]">
@@ -58,12 +64,26 @@ export default function Header() {
                 </li>
               ))}
               <li>
-                <a
-                  href="#log"
-                  className="inline-block no-underline font-extrabold px-4 py-3 rounded-[10px] bg-[#0fb36a] text-white hover:-translate-y-px transition-transform"
-                >
-                  Log In/SignUp
-                </a>
+                {session ? (
+                  <div className="flex items-center gap-2 max-[880px]:flex-col max-[880px]:w-full">
+                    <span className="text-muted text-sm font-semibold">
+                      {session.user?.name || session.user?.email}
+                    </span>
+                    <button
+                      onClick={handleSignOut}
+                      className="inline-block no-underline font-extrabold px-4 py-3 rounded-[10px] bg-[#e91e63] text-white hover:-translate-y-px transition-transform"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="inline-block no-underline font-extrabold px-4 py-3 rounded-[10px] bg-[#0fb36a] text-white hover:-translate-y-px transition-transform"
+                  >
+                    Log In/SignUp
+                  </Link>
+                )}
               </li>
             </ul>
           </div>
