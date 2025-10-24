@@ -3,6 +3,9 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import toast from 'react-hot-toast';
 import {
   checkPasswordStrength,
   getPasswordStrengthLabel,
@@ -13,6 +16,7 @@ export default function SignupPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -41,17 +45,22 @@ export default function SignupPage() {
 
     // Validate password strength
     if (!passwordStrength.isStrong) {
-      setError('Please create a stronger password');
+      const errorMsg = 'Please create a stronger password';
+      setError(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
     // Validate password match
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      const errorMsg = 'Passwords do not match';
+      setError(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
     setIsLoading(true);
+    const loadingToast = toast.loading('Creating your account...');
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -62,21 +71,33 @@ export default function SignupPage() {
         body: JSON.stringify({
           name,
           email,
+          username: username.trim() || null,
           password,
         }),
       });
 
       const data = await response.json();
+      toast.dismiss(loadingToast);
 
       if (!response.ok) {
-        setError(data.message || 'Something went wrong');
+        const errorMsg = data.message || 'Something went wrong';
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
-      // Redirect to login page on success
-      router.push('/login?signup=success');
+      // Show success message and redirect to login page
+      toast.success('Account created successfully! 🎉 Redirecting...', {
+        duration: 2000,
+      });
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
     } catch (err) {
-      setError('An unexpected error occurred');
+      toast.dismiss(loadingToast);
+      const errorMsg = 'An unexpected error occurred';
+      setError(errorMsg);
+      toast.error(errorMsg);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -84,20 +105,37 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="text-ink no-underline font-extrabold text-[2rem]">
-            ThyCookbook<span className="text-[#ff8a00]">.com</span>
+    <main>
+      <Header />
+      
+      <div className="bg-gradient-to-b from-[#0fb36a]/5 to-transparent py-12">
+        <div className="container-custom max-w-2xl">
+          {/* Back to Home Link */}
+                    {/* Back Button */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 mb-6 text-ink font-semibold px-4 py-2.5 rounded-[10px] bg-card border border-black/[0.08] hover:bg-white hover:shadow-brand transition-all group no-underline max-sm:mb-4 max-sm:text-sm"
+          >
+            <svg 
+              className="w-5 h-5 group-hover:-translate-x-1 transition-transform max-sm:w-4 max-sm:h-4" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Home
           </Link>
-          <h2 className="mt-6 text-[2rem] font-extrabold text-ink">Create Account</h2>
-          <p className="mt-2 text-muted">Join our community of food lovers</p>
-        </div>
 
-        {/* Form */}
-        <div className="bg-card rounded-brand shadow-brand border border-black/[0.06] p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Page Header */}
+          <div className="text-center mb-8 max-sm:mb-6">
+            <h1 className="text-3xl font-bold text-ink mb-2 max-sm:text-2xl">Create Account</h1>
+            <p className="text-muted max-sm:text-sm">Join our community of food lovers</p>
+          </div>
+
+          {/* Form Card */}
+          <div className="bg-card rounded-brand shadow-brand border border-black/[0.06] p-8 max-sm:p-5">
+            <form onSubmit={handleSubmit} className="space-y-6 max-sm:space-y-4">
             {/* Error Message */}
             {error && (
               <div className="bg-[#e91e63]/10 border border-[#e91e63] text-[#e91e63] px-4 py-3 rounded-[10px]">
@@ -138,6 +176,27 @@ export default function SignupPage() {
                 className="w-full px-4 py-3 border border-black/[0.12] rounded-[10px] focus:outline-none focus:ring-2 focus:ring-[#0fb36a]/25 focus:border-[#0fb36a] transition-all"
                 placeholder="you@example.com"
               />
+            </div>
+
+            {/* Username Field */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-semibold text-ink mb-2">
+                Username <span className="text-muted text-xs font-normal">(Optional)</span>
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                className="w-full px-4 py-3 border border-black/[0.12] rounded-[10px] focus:outline-none focus:ring-2 focus:ring-[#0fb36a]/25 focus:border-[#0fb36a] transition-all"
+                placeholder="username"
+                maxLength={30}
+              />
+              <p className="mt-1 text-xs text-muted">
+                Choose a unique username for your profile
+              </p>
             </div>
 
             {/* Password Field */}
@@ -361,14 +420,9 @@ export default function SignupPage() {
             </Link>
           </form>
         </div>
-
-        {/* Back to Home */}
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-[#3f51b5] font-semibold hover:underline">
-            ← Back to Home
-          </Link>
-        </div>
       </div>
     </div>
+    <Footer />
+  </main>
   );
 }

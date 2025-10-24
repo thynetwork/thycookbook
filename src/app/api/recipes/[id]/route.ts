@@ -6,11 +6,12 @@ import { prisma } from '@/lib/prisma';
 // GET /api/recipes/[id] - Get a single recipe
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const recipe = await prisma.recipe.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -75,7 +76,7 @@ export async function GET(
 
     // Increment view count
     await prisma.recipe.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         viewCount: {
           increment: 1,
@@ -105,9 +106,10 @@ export async function GET(
 // PATCH /api/recipes/[id] - Update a recipe (protected)
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -119,7 +121,7 @@ export async function PATCH(
 
     // Check if recipe exists and belongs to user
     const existingRecipe = await prisma.recipe.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingRecipe) {
@@ -140,7 +142,7 @@ export async function PATCH(
 
     // Update recipe
     const recipe = await prisma.recipe.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title: data.title,
         description: data.description,
@@ -186,9 +188,10 @@ export async function PATCH(
 // DELETE /api/recipes/[id] - Delete a recipe (protected)
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -200,7 +203,7 @@ export async function DELETE(
 
     // Check if recipe exists and belongs to user
     const existingRecipe = await prisma.recipe.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingRecipe) {
@@ -219,7 +222,7 @@ export async function DELETE(
 
     // Delete recipe
     await prisma.recipe.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: 'Recipe deleted successfully' });

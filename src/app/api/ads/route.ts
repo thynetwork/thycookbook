@@ -12,7 +12,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const location = searchParams.get('location');
 
-    const where: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {
       isActive: true,
     };
 

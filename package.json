@@ -4,14 +4,20 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "npm run db:deploy && next build --turbopack",
+    "build:local": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "db:reset": "prisma db push --force-reset",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:generate": "prisma generate --schema=src/prisma/schema.prisma",
+    "db:push": "prisma db push --schema=src/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=src/prisma/schema.prisma",
+    "db:migrate:prod": "prisma migrate deploy --schema=src/prisma/schema.prisma",
+    "db:deploy": "npm run db:generate && npm run db:migrate:prod && npm run db:seed",
+    "db:seed": "tsx src/prisma/seed.ts",
+    "db:seed:force": "FORCE_SEED=true tsx src/prisma/seed.ts",
+    "db:studio": "prisma studio --schema=src/prisma/schema.prisma",
+    "db:reset": "prisma migrate reset --schema=src/prisma/schema.prisma",
+    "postinstall": "npm run db:generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -24,7 +30,8 @@
     "next-auth": "^4.24.11",
     "prisma": "^6.17.1",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

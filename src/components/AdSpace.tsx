@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Ad, AdSpace as AdSpaceType, parseAdDimensions, isAdActive } from '@/types/ad';
 
 interface AdSpaceProps {
@@ -12,18 +13,6 @@ export default function AdSpace({ location, className = '' }: AdSpaceProps) {
   const [adSpace, setAdSpace] = useState<AdSpaceType | null>(null);
   const [ad, setAd] = useState<Ad | null>(null);
   const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
-
-  useEffect(() => {
-    fetchAdSpace();
-  }, [location]);
-
-  useEffect(() => {
-    // Track impression when ad becomes visible
-    if (ad && !hasTrackedImpression) {
-      trackImpression();
-      setHasTrackedImpression(true);
-    }
-  }, [ad, hasTrackedImpression]);
 
   const fetchAdSpace = async () => {
     try {
@@ -73,7 +62,21 @@ export default function AdSpace({ location, className = '' }: AdSpaceProps) {
     }
   };
 
-  const handleAdClick = (e: React.MouseEvent) => {
+  useEffect(() => {
+    fetchAdSpace();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
+
+  useEffect(() => {
+    // Track impression when ad becomes visible
+    if (ad && !hasTrackedImpression) {
+      trackImpression();
+      setHasTrackedImpression(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ad, hasTrackedImpression]);
+
+  const handleAdClick = () => {
     trackClick();
     
     // If there's a link URL, open it
@@ -107,13 +110,15 @@ export default function AdSpace({ location, className = '' }: AdSpaceProps) {
           tabIndex={ad.linkUrl ? 0 : undefined}
           onKeyDown={(e) => {
             if (ad.linkUrl && (e.key === 'Enter' || e.key === ' ')) {
-              handleAdClick(e as any);
+              handleAdClick();
             }
           }}
         >
-          <img
+          <Image
             src={ad.imageUrl}
             alt={ad.altText || 'Advertisement'}
+            width={primaryDimension?.width || 800}
+            height={primaryDimension?.height || 400}
             className="w-full h-auto rounded-[12px]"
             style={{
               maxWidth: primaryDimension ? `${primaryDimension.width}px` : '100%'

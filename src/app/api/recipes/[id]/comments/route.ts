@@ -6,12 +6,13 @@ import { prisma } from '@/lib/prisma';
 // GET /api/recipes/[id]/comments - Get comments for a recipe
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const comments = await prisma.comment.findMany({
       where: {
-        recipeId: params.id,
+        recipeId: id,
         parentId: null, // Only top-level comments
       },
       include: {
@@ -57,9 +58,10 @@ export async function GET(
 // POST /api/recipes/[id]/comments - Add a comment
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -80,7 +82,7 @@ export async function POST(
 
     // Check if recipe exists
     const recipe = await prisma.recipe.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!recipe) {
@@ -96,7 +98,7 @@ export async function POST(
         data: {
           content: content.trim(),
           userId: session.user.id,
-          recipeId: params.id,
+          recipeId: id,
           parentId: parentId || null,
         },
         include: {
@@ -111,7 +113,7 @@ export async function POST(
         },
       }),
       prisma.recipe.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           commentCount: {
             increment: 1,

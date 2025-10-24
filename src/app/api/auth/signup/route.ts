@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password, name, username } = await req.json();
 
     // Validate input
     if (!email || !password) {
@@ -26,6 +26,20 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if username is taken (if provided)
+    if (username) {
+      const existingUsername = await prisma.user.findUnique({
+        where: { username },
+      });
+
+      if (existingUsername) {
+        return NextResponse.json(
+          { message: 'Username is already taken' },
+          { status: 409 }
+        );
+      }
+    }
+
     // Hash password
     const hashedPassword = await hash(password, 12);
 
@@ -35,6 +49,7 @@ export async function POST(req: Request) {
         email,
         password: hashedPassword,
         name: name || null,
+        username: username || null,
       },
     });
 

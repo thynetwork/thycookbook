@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import AdSpace from './AdSpace';
 
 export default function AboutSection() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -33,14 +34,7 @@ export default function AboutSection() {
           </ul>
 
           {/* AD SLOT #1: About section */}
-          <div
-            className="mt-[18px] border-2 border-dashed border-black/[0.12] bg-white rounded-[12px] shadow-[0_6px_20px_rgba(0,0,0,0.05)] grid place-items-center min-h-[120px]"
-            aria-label="Sponsored"
-          >
-            <div className="font-extrabold text-[#777] p-[18px] text-center">
-              Ad Space — 300×250 / 336×280
-            </div>
-          </div>
+          <AdSpace location="ABOUT_SECTION" className="mt-6" />
         </div>
 
         {/* Video Box */}

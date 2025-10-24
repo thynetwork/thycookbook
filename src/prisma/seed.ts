@@ -21,63 +21,8 @@ enum MealType {
   QUICK_MEAL = 'QUICK_MEAL',
 }
 
-async function main() {
-  console.log('🌱 Starting database seed...');
-
-  // Clear existing data
-  console.log('🗑️  Clearing existing data...');
-  await prisma.ad.deleteMany();
-  await prisma.adSpace.deleteMany();
-  await prisma.savedRecipe.deleteMany();
-  await prisma.like.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.recipe.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.user.deleteMany();
-
-  // Create test users
-  console.log('👤 Creating users...');
-  const hashedPassword = await hash('Password123!', 12);
-
-  const users = await Promise.all([
-    prisma.user.create({
-      data: {
-        email: 'chef@thycookbook.com',
-        name: 'Chef Global',
-        username: 'chefglobal',
-        password: hashedPassword,
-        role: 'CREATOR',
-        bio: 'World-renowned chef sharing global cuisines',
-        emailVerified: new Date(),
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'tokyo@thycookbook.com',
-        name: 'Tokyo Kitchen',
-        username: 'tokyokitchen',
-        password: hashedPassword,
-        role: 'CREATOR',
-        bio: 'Authentic Japanese home cooking',
-        emailVerified: new Date(),
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'spice@thycookbook.com',
-        name: 'Spice Trail',
-        username: 'spicetrail',
-        password: hashedPassword,
-        role: 'CREATOR',
-        bio: 'Middle Eastern and Mediterranean flavors',
-        emailVerified: new Date(),
-      },
-    }),
-  ]);
-
-  // Create categories
+// Seed categories function (can run in production)
+async function seedCategories() {
   console.log('📁 Creating categories...');
   const categories = await Promise.all([
     prisma.category.create({
@@ -134,7 +79,133 @@ async function main() {
         order: 6,
       },
     }),
+    prisma.category.create({
+      data: {
+        name: 'Desserts',
+        slug: 'desserts',
+        description: 'Sweet endings from around the world',
+        icon: '🍰',
+        order: 7,
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: 'Snacks',
+        slug: 'snacks',
+        description: 'Quick bites and street favorites',
+        icon: '🍿',
+        order: 8,
+      },
+    }),
   ]);
+  
+  console.log(`✅ Created ${categories.length} categories`);
+  return categories;
+}
+
+async function main() {
+  console.log('🌱 Starting database seed...');
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  // Check if we're in production
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+  
+  if (isProduction) {
+    console.log('🏭 Production environment detected');
+    console.log('📁 Seeding essential categories only...');
+    
+    // In production, only seed categories if they don't exist
+    const existingCategories = await prisma.category.count();
+    if (existingCategories === 0) {
+      await seedCategories();
+      console.log('✅ Categories seeded successfully in production!');
+    } else {
+      console.log('✅ Categories already exist, skipping seed');
+    }
+    return;
+  }
+
+  // Check for force flag
+  const forceReseed = process.argv.includes('--force');
+
+  // Check if database is already seeded
+  const existingUsers = await prisma.user.count();
+  const existingCategories = await prisma.category.count();
+  const existingRecipes = await prisma.recipe.count();
+
+  if (existingUsers > 0 || existingCategories > 0 || existingRecipes > 0) {
+    if (!forceReseed) {
+      console.log('\n⚠️  Database already contains data:');
+      console.log(`   - ${existingUsers} users`);
+      console.log(`   - ${existingCategories} categories`);
+      console.log(`   - ${existingRecipes} recipes`);
+      console.log('\n💡 To prevent accidental data loss, seeding has been skipped.');
+      console.log('\n📝 Options:');
+      console.log('   1. Keep existing data: Do nothing');
+      console.log('   2. Reset and reseed: npm run db:reset && npm run db:seed');
+      console.log('   3. Force reseed: npm run db:seed -- --force');
+      return;
+    }
+    console.log('⚠️  Force flag detected - proceeding with reseed...');
+  } else {
+    console.log('✅ Database is empty, proceeding with seed...');
+  }
+
+  // Clear existing data
+  console.log('🗑️  Clearing existing data...');
+  await prisma.ad.deleteMany();
+  await prisma.adSpace.deleteMany();
+  await prisma.savedRecipe.deleteMany();
+  await prisma.like.deleteMany();
+  await prisma.comment.deleteMany();
+  await prisma.recipe.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.account.deleteMany();
+  await prisma.user.deleteMany();
+
+  // Create test users
+  console.log('👤 Creating users...');
+  const hashedPassword = await hash('Password123!', 12);
+
+  const users = await Promise.all([
+    prisma.user.create({
+      data: {
+        email: 'chef@thycookbook.com',
+        name: 'Chef Global',
+        username: 'chefglobal',
+        password: hashedPassword,
+        role: 'CREATOR',
+        bio: 'World-renowned chef sharing global cuisines',
+        emailVerified: new Date(),
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'tokyo@thycookbook.com',
+        name: 'Tokyo Kitchen',
+        username: 'tokyokitchen',
+        password: hashedPassword,
+        role: 'CREATOR',
+        bio: 'Authentic Japanese home cooking',
+        emailVerified: new Date(),
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: 'spice@thycookbook.com',
+        name: 'Spice Trail',
+        username: 'spicetrail',
+        password: hashedPassword,
+        role: 'CREATOR',
+        bio: 'Middle Eastern and Mediterranean flavors',
+        emailVerified: new Date(),
+      },
+    }),
+  ]);
+
+  // Create categories
+  const categories = await seedCategories();
 
   // Create recipes
   console.log('🍳 Creating recipes...');
@@ -263,7 +334,7 @@ async function main() {
   // Create Ad Spaces
   console.log('📢 Creating ad spaces...');
   
-  const adSpaces = await Promise.all([
+  await Promise.all([
     // Ad Space 1: About Section
     prisma.adSpace.create({
       data: {
@@ -318,7 +389,7 @@ async function main() {
   console.log('\n✅ Database seeded successfully!');
   console.log('\n📊 Summary:');
   console.log('- 3 users (1 admin, 2 creators)');
-  console.log('- 6 categories');
+  console.log('- 8 categories (including Desserts and Snacks)');
   console.log('- 3 recipes');
   console.log('- 3 ad spaces');
   console.log('\n📝 Test user credentials:');
@@ -326,6 +397,24 @@ async function main() {
   console.log('Password: Password123!');
 }
 
+/**
+ * PRODUCTION SAFETY:
+ * This seed script has different behavior based on the environment:
+ * 
+ * PRODUCTION:
+ * - Only seeds essential categories if they don't exist
+ * - Will NOT seed users, recipes, or test data
+ * - Safe to run in production to ensure all categories exist
+ * 
+ * DEVELOPMENT:
+ * - Seeds complete test data (users, categories, recipes, ad spaces)
+ * - Includes safety checks to prevent accidental overwrites
+ * - Use `npm run db:seed -- --force` to force reseed
+ * 
+ * To seed your database:
+ * - Development: Run `npm run db:seed`
+ * - Production: Run `npm run db:seed` (will only seed categories)
+ */
 main()
   .catch((e) => {
     console.error('❌ Seed error:', e);

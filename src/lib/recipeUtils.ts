@@ -46,8 +46,9 @@ export function getMealTypeLabel(mealType: string): string {
 }
 
 export interface ParsedIngredient {
-  item: string;
   amount: string;
+  unit: string;
+  item: string;
 }
 
 export interface ParsedInstruction {

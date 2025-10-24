@@ -6,9 +6,10 @@ import { prisma } from '@/lib/prisma';
 // POST /api/recipes/[id]/save - Save/Unsave a recipe
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -20,7 +21,7 @@ export async function POST(
 
     // Check if recipe exists
     const recipe = await prisma.recipe.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!recipe) {
@@ -35,7 +36,7 @@ export async function POST(
       where: {
         userId_recipeId: {
           userId: session.user.id,
-          recipeId: params.id,
+          recipeId: id,
         },
       },
     });
@@ -52,7 +53,7 @@ export async function POST(
       await prisma.savedRecipe.create({
         data: {
           userId: session.user.id,
-          recipeId: params.id,
+          recipeId: id,
         },
       });
 

@@ -12,15 +12,24 @@ export async function GET(req: Request) {
     const category = searchParams.get('category');
     const mealType = searchParams.get('mealType');
     const search = searchParams.get('search');
+    const slug = searchParams.get('slug');
     const featured = searchParams.get('featured') === 'true';
     const userId = searchParams.get('userId');
 
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: any = {
-      published: true,
-    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {};
+
+    // If fetching by slug, don't filter by published (allow owner to see their own unpublished recipes)
+    if (!slug) {
+      where.published = true;
+    }
+
+    if (slug) {
+      where.slug = slug;
+    }
 
     if (category) {
       where.category = {
@@ -29,8 +38,10 @@ export async function GET(req: Request) {
     }
 
     if (mealType) {
+      // mealType is stored as a JSON string, so we use contains to search within it
       where.mealType = {
-        has: mealType.toUpperCase(),
+        contains: mealType.toUpperCase(),
+        mode: 'insensitive',
       };
     }
 
@@ -112,45 +123,105 @@ export async function POST(req: Request) {
 
     const data = await req.json();
 
-    // Generate slug from title
-    const slug = data.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-
-    // Check if slug exists
-    const existingRecipe = await prisma.recipe.findUnique({
-      where: { slug },
-    });
-
-    if (existingRecipe) {
+    // Validation
+    if (!data.title || !data.title.trim()) {
       return NextResponse.json(
-        { message: 'A recipe with this title already exists' },
-        { status: 409 }
+        { message: 'Recipe title is required' },
+        { status: 400 }
       );
+    }
+
+    if (!data.ingredients || !Array.isArray(data.ingredients) || data.ingredients.length === 0) {
+      return NextResponse.json(
+        { message: 'At least one ingredient is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!data.instructions || !Array.isArray(data.instructions) || data.instructions.length === 0) {
+      return NextResponse.json(
+        { message: 'At least one instruction step is required' },
+        { status: 400 }
+      );
+    }
+
+    // Generate slug from title
+    const baseSlug = data.title
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    // Ensure unique slug
+    let slug = baseSlug;
+    let counter = 1;
+    
+    while (true) {
+      const existingRecipe = await prisma.recipe.findUnique({
+        where: { slug },
+      });
+
+      if (!existingRecipe) {
+        break;
+      }
+
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    // Determine category based on mealType
+    let categoryId = data.categoryId || null;
+    if (!categoryId && data.mealType && Array.isArray(data.mealType) && data.mealType.length > 0) {
+      // Map mealType to category slug
+      const mealTypeToCategoryMap: Record<string, string> = {
+        'BREAKFAST': 'breakfast',
+        'BRUNCH': 'brunch',
+        'LUNCH': 'lunch',
+        'DINNER': 'dinner',
+        'QUICK_MEAL': 'quick-meals',
+        'APPETIZER': 'appetizers',
+        'DESSERT': 'desserts',
+        'SNACK': 'snacks',
+      };
+
+      const primaryMealType = data.mealType[0]; // Use first mealType
+      const categorySlug = mealTypeToCategoryMap[primaryMealType];
+      
+      if (categorySlug) {
+        // Find or create category
+        const category = await prisma.category.findUnique({
+          where: { slug: categorySlug },
+        });
+        
+        if (category) {
+          categoryId = category.id;
+        }
+      }
     }
 
     // Create recipe
     const recipe = await prisma.recipe.create({
       data: {
-        title: data.title,
+        title: data.title.trim(),
         slug,
-        description: data.description,
+        description: data.description?.trim() || null,
         ingredients: JSON.stringify(data.ingredients || []),
         instructions: JSON.stringify(data.instructions || []),
-        prepTime: data.prepTime,
-        cookTime: data.cookTime,
-        servings: data.servings,
+        prepTime: data.prepTime ? parseInt(data.prepTime) : null,
+        cookTime: data.cookTime ? parseInt(data.cookTime) : null,
+        servings: data.servings ? parseInt(data.servings) : null,
         difficulty: data.difficulty || 'MEDIUM',
-        thumbnail: data.thumbnail,
+        thumbnail: data.thumbnail?.trim() || null,
         images: data.images ? JSON.stringify(data.images) : null,
-        videoUrl: data.videoUrl,
-        videoEmbedId: data.videoEmbedId,
-        cuisine: data.cuisine,
-        mealType: data.mealType || [],
+        videoUrl: data.videoUrl?.trim() || null,
+        videoEmbedId: data.videoEmbedId || null,
+        cuisine: data.cuisine?.trim() || null,
+        mealType: data.mealType ? JSON.stringify(data.mealType) : null,
         dietaryTags: data.dietaryTags ? JSON.stringify(data.dietaryTags) : null,
         published: data.published || false,
-        categoryId: data.categoryId,
+        publishedAt: data.published ? new Date() : null,
+        categoryId: data.categoryId || null,
         userId: session.user.id,
       },
       include: {
@@ -166,7 +237,10 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(recipe, { status: 201 });
+    return NextResponse.json({
+      message: 'Recipe created successfully',
+      recipe,
+    }, { status: 201 });
   } catch (error) {
     console.error('POST /api/recipes error:', error);
     return NextResponse.json(
