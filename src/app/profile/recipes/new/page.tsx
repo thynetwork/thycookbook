@@ -2,10 +2,11 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, useRef, FormEvent } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Loading from '@/components/Loading';
+import FileUpload, { FileUploadRef } from '@/components/FileUpload';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -35,8 +36,12 @@ export default function CreateRecipePage() {
   const [dietaryTags, setDietaryTags] = useState<string[]>([]);
   
   // Media
-  const [thumbnail, setThumbnail] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoMode, setVideoMode] = useState<'upload' | 'embed'>('embed');
+  
+  // File upload refs
+  const thumbnailRef = useRef<FileUploadRef>(null);
+  const videoRef = useRef<FileUploadRef>(null);
   
   // Privacy
   const [published, setPublished] = useState(false);
@@ -136,7 +141,11 @@ export default function CreateRecipePage() {
     const loadingToast = toast.loading('Creating recipe...');
 
     try {
-      const videoEmbedId = extractVideoId(videoUrl);
+      // STEP 1: Create recipe first to get recipeId (matches ThyMissing/ThyPolice2 pattern)
+      toast.loading('Creating recipe...', { id: loadingToast });
+
+      // Extract video embed ID only for embed mode
+      const videoEmbedId = videoMode === 'embed' ? extractVideoId(videoUrl) : null;
 
       const response = await fetch('/api/recipes', {
         method: 'POST',
@@ -155,14 +164,90 @@ export default function CreateRecipePage() {
           cuisine: cuisine.trim() || null,
           mealType: mealTypes.length > 0 ? mealTypes : null,
           dietaryTags: dietaryTags.length > 0 ? dietaryTags : null,
-          thumbnail: thumbnail.trim() || null,
-          videoUrl: videoUrl.trim() || null,
+          thumbnail: null, // Will update after upload
+          videoUrl: videoMode === 'embed' ? videoUrl : null, // For embed mode, use URL directly
           videoEmbedId,
-          published, // Use the state value
+          published,
         }),
       });
 
       const data = await response.json();
+
+      if (!response.ok) {
+        toast.dismiss(loadingToast);
+        toast.error(data.message || 'Failed to create recipe');
+        return;
+      }
+
+      const recipeId = data.recipe?.id;
+      if (!recipeId) {
+        toast.dismiss(loadingToast);
+        toast.error('Recipe created but ID not returned');
+        return;
+      }
+
+      console.log('✅ Recipe created with ID:', recipeId);
+
+      // STEP 2: Upload files with recipeId (server-side upload)
+      let uploadedThumbnail = '';
+      let uploadedVideoUrl = videoMode === 'embed' ? videoUrl : '';
+
+      // Upload thumbnail if user selected a file
+      if (thumbnailRef.current?.hasFile()) {
+        toast.loading('Uploading thumbnail...', { id: loadingToast });
+        const thumbnailS3Key = await thumbnailRef.current.uploadFile(recipeId);
+        if (thumbnailS3Key) {
+          uploadedThumbnail = thumbnailS3Key;
+          console.log('✅ Thumbnail uploaded:', thumbnailS3Key);
+        } else {
+          toast.dismiss(loadingToast);
+          toast.error('Failed to upload thumbnail');
+          return;
+        }
+      }
+
+      // Upload video if user selected a file (upload mode)
+      if (videoMode === 'upload' && videoRef.current?.hasFile()) {
+        toast.loading('Uploading video...', { id: loadingToast });
+        const videoS3Key = await videoRef.current.uploadFile(recipeId);
+        if (videoS3Key) {
+          uploadedVideoUrl = videoS3Key;
+          console.log('✅ Video uploaded:', videoS3Key);
+        } else {
+          toast.dismiss(loadingToast);
+          toast.error('Failed to upload video');
+          return;
+        }
+      }
+
+      // STEP 3: Update recipe with uploaded file URLs if any files were uploaded
+      if (uploadedThumbnail || (videoMode === 'upload' && uploadedVideoUrl)) {
+        toast.loading('Updating recipe with media...', { id: loadingToast });
+        
+        const updateResponse = await fetch(`/api/recipes/${recipeId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            thumbnail: uploadedThumbnail || undefined,
+            videoUrl: uploadedVideoUrl || undefined,
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          toast.dismiss(loadingToast);
+          toast.error('Recipe created but failed to update media files');
+          // Still redirect since recipe was created
+          setTimeout(() => {
+            router.push('/profile');
+          }, 1500);
+          return;
+        }
+
+        console.log('✅ Recipe updated with media files');
+      }
+
       toast.dismiss(loadingToast);
 
       if (!response.ok) {
@@ -552,45 +637,85 @@ export default function CreateRecipePage() {
 
               {/* Media */}
               <section>
-                <h2 className="text-xl font-bold text-ink mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-ink mb-4 flex items-center gap-2 max-sm:text-lg">
                   <span>📸</span> Media
                 </h2>
                 
-                <div className="space-y-4">
-                  {/* Thumbnail */}
+                <div className="space-y-6">
+                  {/* Thumbnail Image Upload */}
                   <div>
-                    <label htmlFor="thumbnail" className="block text-sm font-semibold text-ink mb-2">
-                      Thumbnail Image URL
-                    </label>
-                    <input
-                      id="thumbnail"
-                      type="url"
-                      value={thumbnail}
-                      onChange={(e) => setThumbnail(e.target.value)}
-                      className="w-full px-4 py-3 border border-black/[0.12] rounded-[10px] focus:outline-none focus:ring-2 focus:ring-[#0fb36a]/25 focus:border-[#0fb36a] transition-all"
-                      placeholder="https://example.com/image.jpg"
+                    <FileUpload
+                      ref={thumbnailRef}
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                      maxSizeMB={10}
+                      label="Recipe Thumbnail Image"
                     />
-                    <p className="mt-1 text-xs text-muted">
-                      Add a URL to your recipe&apos;s main image
-                    </p>
                   </div>
 
-                  {/* Video URL */}
-                  <div>
-                    <label htmlFor="videoUrl" className="block text-sm font-semibold text-ink mb-2">
-                      Video URL (YouTube or Vimeo)
+                  {/* Video Section */}
+                  <div className="border-t border-black/[0.08] pt-6">
+                    <label className="block text-sm font-semibold text-ink mb-3">
+                      Recipe Video (Optional)
                     </label>
-                    <input
-                      id="videoUrl"
-                      type="url"
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      className="w-full px-4 py-3 border border-black/[0.12] rounded-[10px] focus:outline-none focus:ring-2 focus:ring-[#0fb36a]/25 focus:border-[#0fb36a] transition-all"
-                      placeholder="https://www.youtube.com/watch?v=..."
-                    />
-                    <p className="mt-1 text-xs text-muted">
-                      Add a YouTube or Vimeo video tutorial (optional)
-                    </p>
+                    
+                    {/* Video Mode Selector */}
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVideoMode('embed');
+                          setVideoUrl('');
+                        }}
+                        className={`flex-1 px-4 py-3 rounded-[10px] font-semibold transition-all text-sm ${
+                          videoMode === 'embed'
+                            ? 'bg-[#0fb36a] text-white'
+                            : 'bg-bg text-ink hover:bg-white'
+                        }`}
+                      >
+                        🔗 Embed Video
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVideoMode('upload');
+                          setVideoUrl('');
+                        }}
+                        className={`flex-1 px-4 py-3 rounded-[10px] font-semibold transition-all text-sm ${
+                          videoMode === 'upload'
+                            ? 'bg-[#0fb36a] text-white'
+                            : 'bg-bg text-ink hover:bg-white'
+                        }`}
+                      >
+                        ⬆️ Upload Video
+                      </button>
+                    </div>
+
+                    {/* Embed Mode */}
+                    {videoMode === 'embed' && (
+                      <div>
+                        <input
+                          id="videoUrl"
+                          type="url"
+                          value={videoUrl}
+                          onChange={(e) => setVideoUrl(e.target.value)}
+                          className="w-full px-4 py-3 border border-black/[0.12] rounded-[10px] focus:outline-none focus:ring-2 focus:ring-[#0fb36a]/25 focus:border-[#0fb36a] transition-all"
+                          placeholder="https://www.youtube.com/watch?v=... or https://vimeo.com/..."
+                        />
+                        <p className="mt-2 text-xs text-muted">
+                          Paste a YouTube or Vimeo URL to embed the video
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Upload Mode */}
+                    {videoMode === 'upload' && (
+                      <FileUpload
+                        ref={videoRef}
+                        accept="video/mp4,video/mpeg,video/quicktime,video/webm"
+                        maxSizeMB={500}
+                        label="Upload Video"
+                      />
+                    )}
                   </div>
                 </div>
               </section>

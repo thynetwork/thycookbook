@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -49,10 +49,71 @@ export default function RecipeDetail({ recipe }: RecipeDetailProps) {
   const [isSaved, setIsSaved] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(recipe.likeCount);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [mediaLoading, setMediaLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+  
+  // Mark when we're on client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const ingredients = parseIngredients(recipe.ingredients);
   const instructions = parseInstructions(recipe.instructions);
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+
+
+  // Fetch presigned URLs for S3 media (ThyMissing pattern)
+  useEffect(() => {
+    const fetchMediaUrls = async () => {
+      try {
+        setMediaLoading(true);
+
+        // Simple S3 detection and presigned URL fetching
+        if (recipe.thumbnail && recipe.thumbnail.startsWith('s3://')) {
+          try {
+            const response = await fetch('/api/media/presigned-url', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: recipe.thumbnail }),
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              setThumbnailUrl(data.presignedUrl);
+            }
+          } catch (error) {
+            console.error('Failed to fetch thumbnail presigned URL:', error);
+          }
+        }
+
+        if (recipe.videoUrl && recipe.videoUrl.startsWith('s3://') && !recipe.videoEmbedId) {
+          try {
+            const response = await fetch('/api/media/presigned-url', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: recipe.videoUrl }),
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              setVideoUrl(data.presignedUrl);
+            }
+          } catch (error) {
+            console.error('Failed to fetch video presigned URL:', error);
+          }
+        }
+
+        setMediaLoading(false);
+      } catch (error) {
+        console.error('Error fetching media URLs:', error);
+        setMediaLoading(false);
+      }
+    };
+
+    fetchMediaUrls();
+  }, [recipe.thumbnail, recipe.videoUrl]);
 
   const handleLike = async () => {
     if (!session) {
@@ -113,21 +174,36 @@ export default function RecipeDetail({ recipe }: RecipeDetailProps) {
     }
   };
 
+  // Check if video is uploaded or embedded (ThyMissing pattern)
+  const isUploadedVideo = recipe.videoUrl && !recipe.videoEmbedId && 
+    recipe.videoUrl.startsWith('s3://');
+
   const getVideoEmbedUrl = () => {
     if (recipe.videoEmbedId) {
       return `https://www.youtube.com/embed/${recipe.videoEmbedId}`;
     }
-    return recipe.videoUrl;
+    return null;
   };
 
+  // Get thumbnail (ThyMissing pattern)
   const getThumbnail = () => {
-    if (recipe.thumbnail) {
+    // Use presigned URL if available (fetched from S3)
+    if (thumbnailUrl) {
+      return thumbnailUrl;
+    }
+    
+    // YouTube thumbnail
+    if (recipe.videoEmbedId) {
+      return `https://img.youtube.com/vi/${recipe.videoEmbedId}/hqdefault.jpg`;
+    }
+    
+    // External HTTPS URLs (not S3)
+    if (recipe.thumbnail && recipe.thumbnail.startsWith('https://') && !recipe.thumbnail.startsWith('s3://')) {
       return recipe.thumbnail;
     }
-    if (recipe.videoEmbedId) {
-      return `https://img.youtube.com/vi/${recipe.videoEmbedId}/maxresdefault.jpg`;
-    }
-    return 'https://placehold.co/1200x675?text=Recipe+Image';
+    
+    // Default placeholder
+    return 'https://placehold.co/640x360?text=Recipe+Video';
   };
 
   return (
@@ -208,31 +284,81 @@ export default function RecipeDetail({ recipe }: RecipeDetailProps) {
 
       {/* Video/Image */}
       <div className="mb-8 rounded-[14px] overflow-hidden shadow-brand">
-        {isPlaying && getVideoEmbedUrl() ? (
+        {!isClient || mediaLoading ? (
+          <div className="aspect-video bg-[#f3f3f3] flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0fb36a] mx-auto mb-2"></div>
+              <p className="text-gray-600">Loading media...</p>
+            </div>
+          </div>
+        ) : isPlaying ? (
           <div className="aspect-video">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`${getVideoEmbedUrl()}?autoplay=1`}
-              frameBorder="0"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              className="w-full h-full"
-            />
+            {isUploadedVideo && videoUrl && !videoUrl.startsWith('s3://') ? (
+              <video
+                controls
+                autoPlay
+                className="w-full h-full object-cover"
+                src={videoUrl}
+                onError={(e) => {
+                  console.error('Video loading error:', e);
+                  toast.error('Failed to load video');
+                }}
+              >
+                Your browser does not support the video tag.
+              </video>
+            ) : getVideoEmbedUrl() ? (
+              <iframe
+                width="100%"
+                height="100%"
+                src={`${getVideoEmbedUrl()}?autoplay=1`}
+                frameBorder="0"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            ) : null}
           </div>
         ) : (
           <div className="relative aspect-video bg-[#f3f3f3]">
-            <Image
-              src={getThumbnail()}
-              alt={recipe.title}
-              fill
-              className="object-cover"
-              unoptimized={getThumbnail().includes('youtube.com')}
-            />
+            {(() => {
+              const thumbSrc = getThumbnail();
+              console.log('🖼️ [RecipeDetail] Final render thumbSrc:', thumbSrc);
+              
+              // ABSOLUTE safety check: NEVER render Image with S3 URI
+              if (!thumbSrc || 
+                  thumbSrc.startsWith('s3://') || 
+                  thumbSrc.startsWith('thycookbook/') ||
+                  !thumbSrc.startsWith('https://')) {
+                console.error('❌ [RecipeDetail] BLOCKED invalid thumbnail from Image:', thumbSrc);
+                return (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <span className="text-gray-400">Loading image...</span>
+                  </div>
+                );
+              }
+              
+              console.log('✅ [RecipeDetail] Rendering Image with safe src:', thumbSrc);
+              return (
+                <Image
+                  src={thumbSrc}
+                  alt={recipe.title}
+                  fill
+                  className="object-cover"
+                  unoptimized={thumbSrc.includes('youtube.com') || thumbSrc.includes('X-Amz-')}
+                  onError={(e) => {
+                    console.error('Image loading error:', e);
+                    // Set fallback image
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://placehold.co/1200x675?text=Recipe+Image';
+                  }}
+                />
+              );
+            })()}
             {(recipe.videoUrl || recipe.videoEmbedId) && (
               <button
                 onClick={() => setIsPlaying(true)}
                 className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
+                disabled={mediaLoading}
               >
                 <div className="w-20 h-20 bg-[#0fb36a] rounded-full flex items-center justify-center text-white text-3xl shadow-brand">
                   ▶

@@ -2,10 +2,11 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, useRef, FormEvent } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Loading from '@/components/Loading';
+import FileUpload, { FileUploadRef } from '@/components/FileUpload';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import {
@@ -22,8 +23,12 @@ export default function EditProfilePage() {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
+  const [avatar, setAvatar] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+
+  // Avatar upload ref
+  const avatarRef = useRef<FileUploadRef>(null);
 
   // Password change states
   const [currentPassword, setCurrentPassword] = useState('');
@@ -65,6 +70,7 @@ export default function EditProfilePage() {
         setEmail(data.email || '');
         setUsername(data.username || '');
         setBio(data.bio || '');
+        setAvatar(data.avatar || '');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -99,6 +105,28 @@ export default function EditProfilePage() {
     const loadingToast = toast.loading('Updating profile...');
 
     try {
+      // Upload avatar if user selected a new file (server-side upload)
+      let uploadedAvatar = avatar;
+      if (avatarRef.current?.hasFile()) {
+        toast.loading('Uploading avatar...', { id: loadingToast });
+        
+        // Use session user ID as the "recipeId" for organizing avatar files
+        // Format will be: thycookbook/recipes/{userId}/images/{timestamp}_{filename}
+        const userId = session?.user?.id || 'user';
+        const avatarS3Key = await avatarRef.current.uploadFile(userId);
+        
+        if (avatarS3Key) {
+          uploadedAvatar = avatarS3Key;
+          console.log('✅ Avatar uploaded:', avatarS3Key);
+        } else {
+          toast.dismiss(loadingToast);
+          toast.error('Failed to upload avatar');
+          return;
+        }
+      }
+
+      toast.loading('Updating profile...', { id: loadingToast });
+
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: {
@@ -109,6 +137,7 @@ export default function EditProfilePage() {
           email: email.trim(),
           username: username.trim() || null,
           bio: bio.trim() || null,
+          avatar: uploadedAvatar.trim() || null,
         }),
       });
 
@@ -256,20 +285,37 @@ export default function EditProfilePage() {
 
           {/* Edit Form Card */}
           <div className="bg-card rounded-brand shadow-brand border border-black/[0.06] p-8 max-sm:p-5">
-            {/* Avatar Preview */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#0fb36a] to-[#0a8c52] text-white font-bold text-4xl flex items-center justify-center border-4 border-white shadow-lg mb-4">
-                {getInitial()}
+            {/* Avatar Upload */}
+            <div className="mb-8">
+              <h3 className="text-lg font-bold text-ink mb-4 text-center">Profile Picture</h3>
+              <div className="max-w-md mx-auto">
+                {avatar && !avatarRef.current?.hasFile() ? (
+                  <div className="flex flex-col items-center space-y-4">
+                    <img
+                      src={avatar}
+                      alt="Profile avatar"
+                      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                    />
+                  </div>
+                ) : !avatar && !avatarRef.current?.hasFile() ? (
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#0fb36a] to-[#0a8c52] text-white font-bold text-5xl flex items-center justify-center border-4 border-white shadow-lg">
+                      {getInitial()}
+                    </div>
+                  </div>
+                ) : null}
+                <div className="mt-4">
+                  <FileUpload
+                    ref={avatarRef}
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    maxSizeMB={5}
+                    label="Upload New Profile Picture"
+                  />
+                </div>
               </div>
-              <p className="text-sm text-muted">Profile Picture</p>
-              <button
-                type="button"
-                onClick={() => toast('Image upload coming soon! 🚀', { icon: '📸' })}
-                className="mt-2 text-sm text-[#0fb36a] hover:underline font-semibold"
-              >
-                Change Picture
-              </button>
             </div>
+
+            <div className="border-t border-black/[0.08] pt-8"></div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6 max-sm:space-y-4">
